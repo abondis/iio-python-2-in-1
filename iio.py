@@ -7,6 +7,32 @@ import dbus
 import math
 import subprocess
 from dbus.mainloop.glib import DBusGMainLoop
+config = {
+    # adjust backlight calculation, default=8.0
+    'lux_ratio': 8.0,
+    # min backlight value
+    'min_bl': 0.1,
+    # orientation settings: dir is xrandr rotation param, matrix is xinput
+    # matrix transformation
+    'orientations': {
+        'normal': {'dir': 'normal', 'matrix': '1 0 0 0 1 0 0 0 1'},
+        'left-up': {'dir': 'left', 'matrix': '0 -1 1 1 0 0 0 0 1'},
+        'bottom-up': {'dir': 'inverted', 'matrix': '-1 0 1 0 -1 1 0 0 1'},
+        'right-up': {'dir': 'right', 'matrix': '0 1 0 -1 0 1 0 0 1'},
+    },
+    # list of devices to configure use the name or number from xinput list
+    'devices': [
+        "Wacom HID 485E Finger",
+        "Wacom HID 485E Pen Pen (0x1c820027)",
+    ],
+    'screen': 'eDP1',
+}
+LUX_RATIO = config.get('lux_ratio', 8.0)
+MIN_BL = config.get('min_bl', 0.1)
+ORIENTATIONS = config.get('orientations', {})
+DEVS = config.get('devices', [])
+SCREEN = config.get('screen', 'eDP1')
+
 
 DBusGMainLoop(set_as_default=True)
 bus = dbus.SystemBus()
@@ -32,13 +58,11 @@ props = props_iface.GetAll('net.hadess.SensorProxy')
 unit = props['LightLevelUnit']
 def adjust_lux(val):
     val = max(1, val)
-    # TODO: put ratio in conf
     res = round(
-        math.log10(val)/8.0,
+        math.log10(val)/LUX_RATIO,
         3
     ) * 100
-    # TODO: put min value in conf
-    return max(0.1, res)
+    return max(MIN_BL, res)
 
 if unit == "lux":
     # adjust = lambda x: min(x, 1000) / 10
@@ -48,29 +72,22 @@ else:
     # alternative : times 100k
     adjust = lambda x: x
 
-ORIENTATIONS = {
-    'normal': {'dir': 'normal', 'matrix': '1 0 0 0 1 0 0 0 1'},
-    'left-up': {'dir': 'left', 'matrix': '0 -1 1 1 0 0 0 0 1'},
-    'bottom-up': {'dir': 'inverted', 'matrix': '-1 0 1 0 -1 1 0 0 1'},
-    'right-up': {'dir': 'right', 'matrix': '0 1 0 -1 0 1 0 0 1'},
-}
 
-DEV = str(11)
 def change_orientation(orientation):
     pos = ORIENTATIONS[orientation]
-    subprocess.check_call(['xrandr', '-o', pos['dir']])
-    print(
-                'xinput', 'set-prop', DEV,
-                '"Coordinate Transformation Matrix"',
-                pos['matrix'].split()
-    )
-    subprocess.check_call(["echo", "blah"])
-    subprocess.check_call(
-            [
-                'xinput', 'set-prop', DEV,
-                'Coordinate Transformation Matrix',
-            ] + pos['matrix'].split()
-    )
+    subprocess.check_call(['xrandr', '--output', SCREEN, '--rotate', pos['dir']])
+    for dev in DEVS:
+        subprocess.check_call(
+                [
+                    'xinput', 'map-to-output', dev, SCREEN
+                ]
+        )
+        # subprocess.check_call(
+                # [
+                    # 'xinput', 'set-prop', dev,
+                    # 'Coordinate Transformation Matrix',
+                # ] + pos['matrix'].split()
+        # )
 
 # Match properties changed
 def props_changed(sender, content, *args, **kwargs):
