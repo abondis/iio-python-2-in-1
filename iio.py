@@ -4,21 +4,12 @@
 #  - https://dbus.freedesktop.org/doc/dbus-python/tutorial.html#receiving-signals-from-a-proxy-object
 #  - https://github.com/mrquincle/yoga-900-auto-rotate
 import dbus
+import math
+import subprocess
 from dbus.mainloop.glib import DBusGMainLoop
 
 DBusGMainLoop(set_as_default=True)
-# bus = dbus.SessionBus()
 bus = dbus.SystemBus()
-
-def props_changed(sender, content, *args, **kwargs):
-    if 'AccelerometerOrientation' in content:
-        print("Yeah! orientation changed!")
-    if 'LightLevel' in content:
-        print("Yeah! light changed!")
-    print("received something: args: ")
-    print(args)
-    print("kwargs:")
-    print(kwargs)
 
 iio = bus.get_object('net.hadess.SensorProxy',
                        '/net/hadess/SensorProxy')
@@ -32,11 +23,71 @@ iio_iface.ClaimAccelerometer()
 
 
 props_iface = dbus.Interface(iio, 'org.freedesktop.DBus.Properties')
-# Match properties changed
-props_iface.connect_to_signal("PropertiesChanged", props_changed)
 # list properties
 # https://stackoverflow.com/a/24126305/5178528
-print(props_iface.GetAll('net.hadess.SensorProxy'))
+props = props_iface.GetAll('net.hadess.SensorProxy')
+
+# adjust backlight based on lux and formula
+# https://docs.microsoft.com/en-us/windows/win32/sensorsapi/understanding-and-interpreting-lux-values?redirectedfrom=MSDN
+unit = props['LightLevelUnit']
+def adjust_lux(val):
+    val = max(1, val)
+    # TODO: put ratio in conf
+    res = round(
+        math.log10(val)/8.0,
+        3
+    ) * 100
+    # TODO: put min value in conf
+    return max(0.1, res)
+
+if unit == "lux":
+    # adjust = lambda x: min(x, 1000) / 10
+    adjust = adjust_lux
+else:
+    # if not lux ... use % brightness as the value to set the backlight
+    # alternative : times 100k
+    adjust = lambda x: x
+
+ORIENTATIONS = {
+    'normal': {'dir': 'normal', 'matrix': '1 0 0 0 1 0 0 0 1'},
+    'left-up': {'dir': 'left', 'matrix': '0 -1 1 1 0 0 0 0 1'},
+    'bottom-up': {'dir': 'inverted', 'matrix': '-1 0 1 0 -1 1 0 0 1'},
+    'right-up': {'dir': 'right', 'matrix': '0 1 0 -1 0 1 0 0 1'},
+}
+
+DEV = str(11)
+def change_orientation(orientation):
+    pos = ORIENTATIONS[orientation]
+    subprocess.check_call(['xrandr', '-o', pos['dir']])
+    print(
+                'xinput', 'set-prop', DEV,
+                '"Coordinate Transformation Matrix"',
+                pos['matrix'].split()
+    )
+    subprocess.check_call(["echo", "blah"])
+    subprocess.check_call(
+            [
+                'xinput', 'set-prop', DEV,
+                'Coordinate Transformation Matrix',
+            ] + pos['matrix'].split()
+    )
+
+# Match properties changed
+def props_changed(sender, content, *args, **kwargs):
+    orientation = content.get('AccelerometerOrientation')
+    lvl = content.get('LightLevel')
+    if orientation:
+        change_orientation(orientation)
+        print("Yeah! orientation changed!")
+    if lvl is not None:
+        br= "{0:.1f}".format(
+            adjust(lvl)
+        )
+        print("Yeah! light changed: " + br)
+        subprocess.check_call(["xbacklight", "="+br])
+    print(content)
+
+props_iface.connect_to_signal("PropertiesChanged", props_changed)
 
 if __name__ == "__main__":
     from gi.repository import GLib
