@@ -9,7 +9,7 @@ import subprocess
 from dbus.mainloop.glib import DBusGMainLoop
 config = {
     # adjust backlight calculation, default=8.0
-    'lux_ratio': 8.0,
+    'lux_ratio': 14.0,
     # min backlight value
     'min_bl': 0.1,
     # orientation settings: dir is xrandr rotation param, matrix is xinput
