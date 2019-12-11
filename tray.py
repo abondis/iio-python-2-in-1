@@ -10,9 +10,22 @@ try:
     from gi.repository import AppIndicator3 as appindicator
 except (ImportError, ValueError):
     appindicator = None
+import dbus
+bus = dbus.SessionBus()
+_2in1 = bus.get_object('name.abondis.twoin1',
+                   '/name/abondis/twoin1')
+_2in1_iface = dbus.Interface(
+        _2in1,
+        dbus_interface='name.abondis.twoin1'
+        )
 
-def toggle(widget, data=None):
-    print('toggling')
+def toggleAccel(widget, data=None):
+    print('toggling Accel')
+    _2in1_iface.ToggleAccel()
+
+def toggleLight(widget, data=None):
+    print('toggling Light')
+    _2in1_iface.ToggleLight()
 
 def show_menu(menu, icon):
     def menu_cb(widget, button, time, data=None):
@@ -43,7 +56,7 @@ def main():
         status_icon.set_tooltip_text('Manage 2in1 stuff')
     if not appindicator:
         # Connect signals for status icon and show
-        status_icon.connect('activate', toggle)
+        status_icon.connect('activate', toggleLight)
         status_icon.connect(
                 'popup-menu',
                 show_menu(_menu, status_icon)
@@ -54,8 +67,8 @@ def main():
 def menu():
   menu = gtk.Menu()
   
-  command_one = gtk.MenuItem.new_with_label('My Notes')
-  command_one.connect('activate', note)
+  command_one = gtk.CheckMenuItem.new_with_label('Toggle Rotation')
+  command_one.connect('activate', toggleAccel)
   menu.append(command_one)
   exittray = gtk.MenuItem.new_with_label('Exit Tray')
   exittray.connect('activate', quit)

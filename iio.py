@@ -4,6 +4,7 @@
 #  - https://dbus.freedesktop.org/doc/dbus-python/tutorial.html#receiving-signals-from-a-proxy-object
 #  - https://github.com/mrquincle/yoga-900-auto-rotate
 import dbus
+import dbus.service
 import math
 import subprocess
 from dbus.mainloop.glib import DBusGMainLoop
@@ -47,6 +48,42 @@ accel = dbus.Interface(iio,
 iio_iface.ClaimLight()
 iio_iface.ClaimAccelerometer()
 
+claimed_accel = True
+claimed_light = True
+
+# listen for actions from widget
+class Toggle(dbus.service.Object):
+    def __init__(self, bus, object_path="/name/abondis/twoin1"):
+        dbus.service.Object.__init__(self, bus, object_path)
+        self.claimedLight = True
+        self.claimedAccel = True
+
+    @dbus.service.method(dbus_interface='name.abondis.twoin1',
+                         in_signature='', out_signature='')
+    def ToggleAccel(self):
+        self.claimedAccel = not self.claimedAccel
+        # FIXME: put everything in a class or pass toggle to the rest
+        global claimed_accel
+        claimed_accel = self.claimedAccel
+        if self.claimedAccel:
+            iio_iface.ClaimAccelerometer()
+            print("Claimed Accel")
+        else:
+            iio_iface.ReleaseAccelerometer()
+            print("Released Accel")
+
+    @dbus.service.method(dbus_interface='name.abondis.twoin1',
+                         in_signature='', out_signature='')
+    def ToggleLight(self):
+        self.claimedLight = not self.claimedLight
+        global claimed_light
+        claimed_light = self.claimedLight
+        if self.claimedLight:
+            iio_iface.ClaimLight()
+            print("Claimed Light")
+        else:
+            iio_iface.ReleaseLight()
+            print("Released Light")
 
 props_iface = dbus.Interface(iio, 'org.freedesktop.DBus.Properties')
 # list properties
@@ -93,21 +130,24 @@ def change_orientation(orientation):
 def props_changed(sender, content, *args, **kwargs):
     orientation = content.get('AccelerometerOrientation')
     lvl = content.get('LightLevel')
-    if orientation:
+    if orientation and claimed_accel:
         change_orientation(orientation)
-        print("Yeah! orientation changed!")
-    if lvl is not None:
+        print("Yeah! orientation changed!" + str(claimed_accel))
+    if lvl is not None and claimed_light:
         br= "{0:.1f}".format(
             adjust(lvl)
         )
         print("Yeah! light changed: " + br)
         subprocess.check_call(["xbacklight", "="+br])
-    print(content)
+    # print(content)
 
 props_iface.connect_to_signal("PropertiesChanged", props_changed)
 
 if __name__ == "__main__":
     from gi.repository import GLib
-    
+    session_bus = dbus.SessionBus()
+    name = dbus.service.BusName('name.abondis.twoin1', session_bus)
+    toggle = Toggle(session_bus)
+
     loop = GLib.MainLoop()
     loop.run()
