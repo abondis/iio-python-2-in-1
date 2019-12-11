@@ -14,6 +14,7 @@ For now in `iio.py` will be moved to a config file later
 - [X] xinput set-props
 - [X] xbacklight
 - [ ] config file
+- [X] update backlight when released
 - [X] --pause on manual setting-- using systray we can activate/deactivate on click
 - [X] systray icon
 - [ ] code cleanup: setup proper classes, and remove `global` uses
