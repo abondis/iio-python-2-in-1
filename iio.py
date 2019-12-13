@@ -6,6 +6,7 @@
 import dbus
 import dbus.service
 import math
+import shlex
 import subprocess
 from dbus.mainloop.glib import DBusGMainLoop
 config = {
@@ -27,12 +28,31 @@ config = {
         "Wacom HID 485E Pen Pen (0x1c820027)",
     ],
     'screen': 'eDP1',
+    # themes to use depending on screen brightness
+    'themes': {
+        'dark': {
+            'name': 'Adwaita-dark',
+            # TODO: move to script
+            # NOTE: needs xfsettingsd running
+            'cmd': 'xfconf-query -c xsettings -p /Net/ThemeName -s "{}"',
+        },
+        'light': {
+            # TODO: move to script
+            # NOTE: needs xfsettingsd running
+            'cmd': 'xfconf-query -c xsettings -p /Net/ThemeName -s "{}"',
+            'name': 'Adwaita-light',
+        },
+        'threshold': '10',
+    }
 }
-LUX_RATIO = config.get('lux_ratio', 8.0)
-MIN_BL = config.get('min_bl', 0.1)
+LUX_RATIO = config.get('lux_ratio')
+MIN_BL = config.get('min_bl')
 ORIENTATIONS = config.get('orientations', {})
 DEVS = config.get('devices', [])
 SCREEN = config.get('screen', 'eDP1')
+DARK_TH = config.get('themes', {}).get('dark')
+LIGHT_TH = config.get('themes',{}).get('light')
+TH_THRESHOLD = config.get('themes', {}).get('threshold')
 
 
 DBusGMainLoop(set_as_default=True)
@@ -79,25 +99,45 @@ else:
 
 
 def change_orientation(orientation):
-    pos = ORIENTATIONS[orientation]
-    subprocess.check_call(['xrandr', '--output', SCREEN, '--rotate', pos['dir']])
-    for dev in DEVS:
+    pos = ORIENTATIONS.get(orientation)
+    if (pos is not None) and (SCREEN is not None):
+        subprocess.check_call(['xrandr', '--output', SCREEN, '--rotate', pos['dir']])
+        for dev in DEVS:
+            subprocess.check_call(
+                    [
+                        'xinput', 'map-to-output', dev, SCREEN
+                    ]
+            )
+            # subprocess.check_call(
+                    # [
+                        # 'xinput', 'set-prop', dev,
+                        # 'Coordinate Transformation Matrix',
+                    # ] + pos['matrix'].split()
+            # )
+
+def call_theme_cmd(theme):
+    if (
+            (theme.get('name'))
+            and (theme.get('cmd'))
+    ):
         subprocess.check_call(
-                [
-                    'xinput', 'map-to-output', dev, SCREEN
-                ]
+            shlex.split(
+                theme['cmd'].format(
+                    theme['name']
+                )
+            )
         )
-        # subprocess.check_call(
-                # [
-                    # 'xinput', 'set-prop', dev,
-                    # 'Coordinate Transformation Matrix',
-                # ] + pos['matrix'].split()
-        # )
+        print("Theme changed!")
 
 def update_backlight(lvl):
     br= "{0:.1f}".format(
         adjust(lvl)
     )
+    if (br < TH_THRESHOLD):
+        call_theme_cmd(DARK_TH)
+    else:
+        call_theme_cmd(LIGHT_TH)
+
     print("Yeah! light changed: " + br)
     subprocess.check_call(["xbacklight", "="+br])
 
