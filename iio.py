@@ -29,21 +29,24 @@ config = {
     ],
     'screen': 'eDP1',
     # themes to use depending on screen brightness
-    'themes': {
-        'dark': {
-            'name': 'Adwaita-dark',
-            # TODO: move to script
-            # NOTE: needs xfsettingsd running
-            'cmd': 'xfconf-query -c xsettings -p /Net/ThemeName -s "{}"',
-        },
-        'light': {
-            # TODO: move to script
-            # NOTE: needs xfsettingsd running
-            'cmd': 'xfconf-query -c xsettings -p /Net/ThemeName -s "{}"',
-            'name': 'Adwaita-light',
-        },
-        'threshold': '10',
-    }
+    # NOTE: inverting theme and colors at the same time might not be desired
+    # 'themes': {
+    #     'dark': {
+    #         'name': 'Adwaita-dark',
+    #         # TODO: move to script
+    #         # NOTE: needs xfsettingsd running
+    #         'cmd': 'xfconf-query -c xsettings -p /Net/ThemeName -s "{}"',
+    #     },
+    #     'light': {
+    #         # TODO: move to script
+    #         # NOTE: needs xfsettingsd running
+    #         'cmd': 'xfconf-query -c xsettings -p /Net/ThemeName -s "{}"',
+    #         'name': 'Adwaita-light',
+    #     },
+    # },
+    'threshold': '10',
+    # Command to run to invert screen colors
+    'invert_cmd': 'xrandr-invert-colors',
 }
 LUX_RATIO = config.get('lux_ratio')
 MIN_BL = config.get('min_bl')
@@ -52,8 +55,8 @@ DEVS = config.get('devices', [])
 SCREEN = config.get('screen', 'eDP1')
 DARK_TH = config.get('themes', {}).get('dark')
 LIGHT_TH = config.get('themes',{}).get('light')
-TH_THRESHOLD = config.get('themes', {}).get('threshold')
-
+THRESHOLD = config.get('threshold', 10)
+INVERT = config.get('invert_cmd', 'xrandr-invert-colors')
 
 DBusGMainLoop(set_as_default=True)
 bus = dbus.SystemBus()
@@ -117,8 +120,21 @@ def change_orientation(orientation):
                         # 'Coordinate Transformation Matrix',
                     # ] + pos['matrix'].split()
             # )
+inverted = False
+
+def call_invert(do_invert):
+    global inverted
+    if (do_invert != inverted) and INVERT:
+        inverted = do_invert
+        subprocess.check_call(
+            shlex.split(
+                INVERT
+            )
+        )
 
 def call_theme_cmd(theme):
+    if theme is None:
+        return
     if (
             (theme.get('name'))
             and (theme.get('cmd'))
@@ -136,13 +152,15 @@ def update_backlight(lvl):
     br= "{0:.1f}".format(
         adjust(lvl)
     )
-    if (br < TH_THRESHOLD):
-        call_theme_cmd(DARK_TH)
-    else:
-        call_theme_cmd(LIGHT_TH)
-
     print("Yeah! light changed: " + br)
     subprocess.check_call(["xbacklight", "="+br])
+    if (br < THRESHOLD):
+        call_theme_cmd(DARK_TH)
+        call_invert(True)
+    else:
+        call_theme_cmd(LIGHT_TH)
+        call_invert(False)
+
 
 # Match properties changed
 def props_changed(sender, content, *args, **kwargs):

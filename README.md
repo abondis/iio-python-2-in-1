@@ -15,6 +15,7 @@ Everything is optional and configurable
 ## Config
 
 For now in `iio.py` will be moved to a config file later
+In order to use `xrandr-inverse-color` compile and install https://github.com/zoltanp/xrandr-invert-colors
 
 ## TODO
 
@@ -28,6 +29,7 @@ For now in `iio.py` will be moved to a config file later
 - [ ] code cleanup: setup proper classes, and remove `global` uses
 - [ ] systemd service
 - [X] change themes on the fly
+- [X] change colors on the fly
 - [ ] document setup
 - [ ] change colors (ie: yellow with xrandr?) depending on brightness
-- [ ] FIX: if pen was not detected -> exception, should warn or silent fail
+- [X] FIX: if pen was not detected -> exception, should warn or silent fail
