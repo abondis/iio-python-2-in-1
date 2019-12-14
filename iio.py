@@ -103,11 +103,14 @@ def change_orientation(orientation):
     if (pos is not None) and (SCREEN is not None):
         subprocess.check_call(['xrandr', '--output', SCREEN, '--rotate', pos['dir']])
         for dev in DEVS:
-            subprocess.check_call(
-                    [
-                        'xinput', 'map-to-output', dev, SCREEN
-                    ]
-            )
+            try:
+                subprocess.check_call(
+                        [
+                            'xinput', 'map-to-output', dev, SCREEN
+                        ]
+                )
+            except:
+                print(f"Could not map {dev} to {SCREEN}")
             # subprocess.check_call(
                     # [
                         # 'xinput', 'set-prop', dev,
