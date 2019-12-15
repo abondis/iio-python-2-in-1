@@ -44,7 +44,7 @@ config = {
     #         'name': 'Adwaita-light',
     #     },
     # },
-    'threshold': '10',
+    'threshold': '8',
     # Command to run to invert screen colors
     'invert_cmd': 'xrandr-invert-colors',
 }
@@ -124,6 +124,7 @@ inverted = False
 
 def call_invert(do_invert):
     global inverted
+    print('Is inverted ' + str(inverted))
     if (do_invert != inverted) and INVERT:
         inverted = do_invert
         subprocess.check_call(
@@ -131,6 +132,7 @@ def call_invert(do_invert):
                 INVERT
             )
         )
+    print('Is inverted ' + str(inverted))
 
 def call_theme_cmd(theme):
     if theme is None:
@@ -154,7 +156,7 @@ def update_backlight(lvl):
     )
     print("Yeah! light changed: " + br)
     subprocess.check_call(["xbacklight", "="+br])
-    if (br < THRESHOLD):
+    if (float(br) < float(THRESHOLD)):
         call_theme_cmd(DARK_TH)
         call_invert(True)
     else:
