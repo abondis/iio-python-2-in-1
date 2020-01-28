@@ -24,6 +24,11 @@ LIGHT_TH = config.get('themes',{}).get('light')
 THRESHOLD = config.get('threshold', 10)
 INVERT = config.get('invert_cmd', 'xrandr-invert-colors')
 
+# Number of measurements to use to adjust value (ie: sensor is too sensitive)
+NB_MSR = 3
+MSR_CPT = 0
+MEAN_LGT = 0
+
 DBusGMainLoop(set_as_default=True)
 bus = dbus.SystemBus()
 
@@ -132,13 +137,21 @@ def update_backlight(lvl):
 
 # Match properties changed
 def props_changed(sender, content, *args, **kwargs):
+    global MSR_CPT, MEAN_LGT, NB_MSR
     orientation = content.get('AccelerometerOrientation')
     lvl = content.get('LightLevel')
     if orientation and claimed_accel:
         change_orientation(orientation)
         # DEBUG print("Yeah! orientation changed!" + str(claimed_accel))
     if lvl is not None and claimed_light:
-        update_backlight(lvl)
+        MSR_CPT -= 1
+        MEAN_LGT += lvl
+        if MSR_CPT <= 0:
+            MSR_CPT = NB_MSR
+            lvl = round(MEAN_LGT / NB_MSR)
+            MEAN_LGT = 0
+            print(lvl)
+            update_backlight(lvl)
     # print(content)
 
 props_iface.connect_to_signal("PropertiesChanged", props_changed)
@@ -168,7 +181,7 @@ class Toggle(dbus.service.Object):
                          in_signature='', out_signature='')
     def ToggleLight(self):
         self.claimedLight = not self.claimedLight
-        global claimed_light
+        global claimed_light, NB_MSR, MSR_CPT, MEAN_LGT
         claimed_light = self.claimedLight
         if self.claimedLight:
             iio_iface.ClaimLight()
