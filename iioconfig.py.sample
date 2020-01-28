@@ -1,0 +1,39 @@
+config = {
+    # adjust backlight calculation, default=8.0
+    'lux_ratio': 14.0,
+    # min backlight value
+    'min_bl': 0.1,
+    # orientation settings: dir is xrandr rotation param, matrix is xinput
+    # matrix transformation
+    'orientations': {
+        'normal': {'dir': 'normal', 'matrix': '1 0 0 0 1 0 0 0 1'},
+        'left-up': {'dir': 'left', 'matrix': '0 -1 1 1 0 0 0 0 1'},
+        'bottom-up': {'dir': 'inverted', 'matrix': '-1 0 1 0 -1 1 0 0 1'},
+        'right-up': {'dir': 'right', 'matrix': '0 1 0 -1 0 1 0 0 1'},
+    },
+    # list of devices to configure use the name or number from xinput list
+    'devices': [
+        "Wacom HID 485E Finger",
+        "Wacom HID 485E Pen Pen (0x1c820027)",
+    ],
+    'screen': 'eDP1',
+    # themes to use depending on screen brightness
+    # NOTE: inverting theme and colors at the same time might not be desired
+    # 'themes': {
+    #     'dark': {
+    #         'name': 'Adwaita-dark',
+    #         # TODO: move to script
+    #         # NOTE: needs xfsettingsd running
+    #         'cmd': 'xfconf-query -c xsettings -p /Net/ThemeName -s "{}"',
+    #     },
+    #     'light': {
+    #         # TODO: move to script
+    #         # NOTE: needs xfsettingsd running
+    #         'cmd': 'xfconf-query -c xsettings -p /Net/ThemeName -s "{}"',
+    #         'name': 'Adwaita-light',
+    #     },
+    # },
+    'threshold': '8',
+    # Command to run to invert screen colors
+    'invert_cmd': 'xrandr-invert-colors',
+}

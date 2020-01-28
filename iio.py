@@ -9,45 +9,10 @@ import math
 import shlex
 import subprocess
 from dbus.mainloop.glib import DBusGMainLoop
-config = {
-    # adjust backlight calculation, default=8.0
-    'lux_ratio': 14.0,
-    # min backlight value
-    'min_bl': 0.1,
-    # orientation settings: dir is xrandr rotation param, matrix is xinput
-    # matrix transformation
-    'orientations': {
-        'normal': {'dir': 'normal', 'matrix': '1 0 0 0 1 0 0 0 1'},
-        'left-up': {'dir': 'left', 'matrix': '0 -1 1 1 0 0 0 0 1'},
-        'bottom-up': {'dir': 'inverted', 'matrix': '-1 0 1 0 -1 1 0 0 1'},
-        'right-up': {'dir': 'right', 'matrix': '0 1 0 -1 0 1 0 0 1'},
-    },
-    # list of devices to configure use the name or number from xinput list
-    'devices': [
-        "Wacom HID 485E Finger",
-        "Wacom HID 485E Pen Pen (0x1c820027)",
-    ],
-    'screen': 'eDP1',
-    # themes to use depending on screen brightness
-    # NOTE: inverting theme and colors at the same time might not be desired
-    # 'themes': {
-    #     'dark': {
-    #         'name': 'Adwaita-dark',
-    #         # TODO: move to script
-    #         # NOTE: needs xfsettingsd running
-    #         'cmd': 'xfconf-query -c xsettings -p /Net/ThemeName -s "{}"',
-    #     },
-    #     'light': {
-    #         # TODO: move to script
-    #         # NOTE: needs xfsettingsd running
-    #         'cmd': 'xfconf-query -c xsettings -p /Net/ThemeName -s "{}"',
-    #         'name': 'Adwaita-light',
-    #     },
-    # },
-    'threshold': '8',
-    # Command to run to invert screen colors
-    'invert_cmd': 'xrandr-invert-colors',
-}
+try:
+    from iioconfig import config
+except:
+    raise("No config file, please copy config.py.sample to config.py and modify accordingly")
 LUX_RATIO = config.get('lux_ratio')
 MIN_BL = config.get('min_bl')
 ORIENTATIONS = config.get('orientations', {})
@@ -124,7 +89,7 @@ inverted = False
 
 def call_invert(do_invert):
     global inverted
-    print('Is inverted ' + str(inverted))
+    # DEBUG print('Is inverted ' + str(inverted))
     if (do_invert != inverted) and INVERT:
         inverted = do_invert
         subprocess.check_call(
@@ -132,7 +97,7 @@ def call_invert(do_invert):
                 INVERT
             )
         )
-    print('Is inverted ' + str(inverted))
+    # DEBUG print('Is inverted ' + str(inverted))
 
 def call_theme_cmd(theme):
     if theme is None:
@@ -148,13 +113,13 @@ def call_theme_cmd(theme):
                 )
             )
         )
-        print("Theme changed!")
+        # DEBUG print("Theme changed!")
 
 def update_backlight(lvl):
     br= "{0:.1f}".format(
         adjust(lvl)
     )
-    print("Yeah! light changed: " + br)
+    # DEBUG print("Yeah! light changed: " + br)
     subprocess.check_call(["xbacklight", "="+br])
     if (float(br) < float(THRESHOLD)):
         call_theme_cmd(DARK_TH)
@@ -170,7 +135,7 @@ def props_changed(sender, content, *args, **kwargs):
     lvl = content.get('LightLevel')
     if orientation and claimed_accel:
         change_orientation(orientation)
-        print("Yeah! orientation changed!" + str(claimed_accel))
+        # DEBUG print("Yeah! orientation changed!" + str(claimed_accel))
     if lvl is not None and claimed_light:
         update_backlight(lvl)
     # print(content)
@@ -193,10 +158,10 @@ class Toggle(dbus.service.Object):
         claimed_accel = self.claimedAccel
         if self.claimedAccel:
             iio_iface.ClaimAccelerometer()
-            print("Claimed Accel")
+            # DEBUG print("Claimed Accel")
         else:
             iio_iface.ReleaseAccelerometer()
-            print("Released Accel")
+            # DEBUG print("Released Accel")
 
     @dbus.service.method(dbus_interface='name.abondis.twoin1',
                          in_signature='', out_signature='')
@@ -208,10 +173,10 @@ class Toggle(dbus.service.Object):
             iio_iface.ClaimLight()
             props = props_iface.GetAll('net.hadess.SensorProxy')
             update_backlight(props['LightLevel'])
-            print("Claimed Light")
+            # DEBUG print("Claimed Light")
         else:
             iio_iface.ReleaseLight()
-            print("Released Light")
+            # DEBUG print("Released Light")
 
 if __name__ == "__main__":
     from gi.repository import GLib
