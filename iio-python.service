@@ -1,0 +1,11 @@
+[Unit]
+Description=IIO Sensor handler - Rotate+Brightness
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/iio.py
+# ExecStop=/usr/bin/emacsclient --eval "(kill-emacs)"
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

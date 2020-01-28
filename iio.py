@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # This program uses DBus to read data from iio-sensor-proxy
 # refs:
 #  - https://developer.gnome.org/iio-sensor-proxy/1.0/gdbus-net.hadess.SensorProxy.html#gdbus-property-net-hadess-SensorProxy.LightLevel
