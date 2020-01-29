@@ -25,7 +25,7 @@ THRESHOLD = config.get('threshold', 10)
 INVERT = config.get('invert_cmd', 'xrandr-invert-colors')
 
 # Number of measurements to use to adjust value (ie: sensor is too sensitive)
-NB_MSR = 3
+NB_MSR = 2
 MSR_CPT = 0
 MEAN_LGT = 0
 
