@@ -12,12 +12,15 @@ except (ImportError, ValueError):
     appindicator = None
 import dbus
 bus = dbus.SessionBus()
-_2in1 = bus.get_object('name.abondis.twoin1',
-                   '/name/abondis/twoin1')
-_2in1_iface = dbus.Interface(
-        _2in1,
-        dbus_interface='name.abondis.twoin1'
-        )
+
+def dbus_iface():
+    _2in1 = bus.get_object('name.abondis.twoin1',
+                       '/name/abondis/twoin1')
+    return dbus.Interface(
+            _2in1,
+            dbus_interface='name.abondis.twoin1'
+            )
+_2in1_iface = dbus_iface()
 
 def toggleAccel(widget, data=None):
     print('toggling Accel')
@@ -26,6 +29,11 @@ def toggleAccel(widget, data=None):
 def toggleLight(widget, data=None):
     print('toggling Light')
     _2in1_iface.ToggleLight()
+
+def restart(_):
+    global _2in1_iface
+    _2in1_iface = dbus_iface()
+
 
 def show_menu(menu, icon):
     def menu_cb(widget, button, time, data=None):
@@ -70,8 +78,11 @@ def menu():
   command_one = gtk.CheckMenuItem.new_with_label('Toggle Rotation')
   command_one.connect('activate', toggleAccel)
   menu.append(command_one)
+  restarttray = gtk.MenuItem.new_with_label('Restart Tray')
+  restarttray.connect('activate', restart)
   exittray = gtk.MenuItem.new_with_label('Exit Tray')
   exittray.connect('activate', quit)
+  menu.append(restarttray)
   menu.append(exittray)
   
   return menu
