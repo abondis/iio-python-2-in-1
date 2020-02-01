@@ -25,7 +25,7 @@ THRESHOLD = config.get('threshold', 10)
 INVERT = config.get('invert_cmd', 'xrandr-invert-colors')
 
 # Number of measurements to use to adjust value (ie: sensor is too sensitive)
-NB_MSR = 2
+NB_MSR = config.get('nb_msr', 1)
 MSR_CPT = 0
 MEAN_LGT = 0
 
@@ -148,9 +148,9 @@ def props_changed(sender, content, *args, **kwargs):
         MEAN_LGT += lvl
         if MSR_CPT <= 0:
             MSR_CPT = NB_MSR
-            lvl = round(MEAN_LGT / NB_MSR)
+            lvl = round(MEAN_LGT / (NB_MSR))
             MEAN_LGT = 0
-            print(lvl)
+            # DEBUG pprint(lvl)
             update_backlight(lvl)
     # print(content)
 

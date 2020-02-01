@@ -11,6 +11,8 @@ config = {
         'bottom-up': {'dir': 'inverted', 'matrix': '-1 0 1 0 -1 1 0 0 1'},
         'right-up': {'dir': 'right', 'matrix': '0 1 0 -1 0 1 0 0 1'},
     },
+    # Number of measurements
+    'nb_msr': 3,
     # list of devices to configure use the name or number from xinput list
     'devices': [
         "Wacom HID 485E Finger",
