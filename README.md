@@ -14,14 +14,52 @@ Everything is optional and configurable
 
 ## Install
 - clone
+- copy or create iioconfig.py based on `iioconfig.py.sample`
 - put iio.py in path (`ln -s (pwd)/iio.py ~/.local/bin/`)
 - add service to user systemd (`ln -s (pwd)/iio-python.service ~/.config/systemd/user/iio-python.service`)
 - enable user service (`systemd --user enable iio-python`)
 
 ## Config
 
-For now in `iio.py` will be moved to a config file later
+There is a configuration example `iioconfig.py.sample`
 In order to use `xrandr-inverse-color` compile and install https://github.com/zoltanp/xrandr-invert-colors
+
+### Rotation mapping is incorrect
+
+Apparently rectifying the information given by iiosensors should be as simple as
+giving the proper matrix to ACCEL_MOUNT_MATRIX ( see
+https://github.com/systemd/systemd/blob/master/hwdb.d/60-sensor.hwdb and
+https://gitlab.freedesktop.org/hadess/iio-sensor-proxy/#accelerometer-orientation
+) ... That didn't work for me ...
+
+In order to address this using this repo, reorder the `dir` attributes of the
+`orientations` setting  in `iioconfig.py`:
+
+``` python
+config = {
+  # some settings
+  # ...
+  'orientations': {
+    'normal': {'dir': 'normal'},
+    'left-up': {'dir': 'left'},
+    'bottom-up': {'dir': 'inverted'},
+    'right-up': {'dir': 'right'},
+  }
+  # ...
+  # some other settings
+}
+```
+
+### Changing themes based on screen brightness
+
+See `iioconfig.py.sample` in the section `themes` for an example with XFCE
+
+### Changing colors in low luminosity environment
+
+In `iioconfig.py` there are two setting:
+  - `threshold`: the backlight threshold for low luminosity environment
+  - `invert_cmd`: The command to call when changing backlight threshold (ie:
+    from low to high luminosity)
 
 ## TODO
 
@@ -37,5 +75,5 @@ In order to use `xrandr-inverse-color` compile and install https://github.com/zo
 - [X] change themes on the fly
 - [X] change colors on the fly
 - [X] document setup
-- [ ] change colors (ie: yellow with xrandr?) depending on brightness
+- [X] change colors (ie: yellow with xrandr?) depending on brightness
 - [X] FIX: if pen was not detected -> exception, should warn or silent fail
