@@ -60,12 +60,19 @@ In `iioconfig.py` there are two setting:
   - `threshold`: the backlight threshold for low luminosity environment
   - `invert_cmd`: The command to call when changing backlight threshold (ie:
     from low to high luminosity)
+    
+## Tray applet
+
+The tray applet lets you temporarily activate/deactivate automatic behaviours,
+such as auto rotate or auto brightness. Run `tray.py`, for example at session
+launch. If for any reason it doesn't work, it might have trouble with dbus. In
+that case use the `restart` action in the applet's menu.
 
 ## TODO
 
 - [X] xrandr
 - [X] xinput set-props
-- [X] xbacklight
+- [X] backlight
 - [X] config file
 - [X] update backlight when released
 - [X] --pause on manual setting-- using systray we can activate/deactivate on click

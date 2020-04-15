@@ -36,16 +36,19 @@ def restart(_):
 
 
 def show_menu(menu, icon):
-    def menu_cb(widget, button, time, data=None):
-        menu.show_all()
-        menu.popup(
-                None,
-                None,
-                gtk.StatusIcon.position_menu,
-                icon,
-                button,
-                time
-                )
+    def menu_cb(widget, data=None):
+       event = gtk.get_current_event()
+       button = event.button.button
+       time = gtk.get_current_event_time()
+       menu.show_all()
+       menu.popup(
+           None,
+           None,
+           gtk.StatusIcon.position_menu,
+           icon,
+           button,
+           time
+       )
     return menu_cb
 
 def main():
@@ -64,9 +67,10 @@ def main():
         status_icon.set_tooltip_text('Manage 2in1 stuff')
     if not appindicator:
         # Connect signals for status icon and show
-        status_icon.connect('activate', toggleLight)
+        # status_icon.connect('activate', toggleLight)
         status_icon.connect(
-                'popup-menu',
+                # 'popup-menu',
+                'activate',
                 show_menu(_menu, status_icon)
                 )
         status_icon.set_visible(True)
@@ -74,10 +78,13 @@ def main():
 
 def menu():
   menu = gtk.Menu()
-  
-  command_one = gtk.CheckMenuItem.new_with_label('Toggle Rotation')
-  command_one.connect('activate', toggleAccel)
+
+  command_one = gtk.CheckMenuItem.new_with_label('Disable AutoLight')
+  command_one.connect('activate', toggleLight)
   menu.append(command_one)
+  command_two = gtk.CheckMenuItem.new_with_label('Disable Rotation')
+  command_two.connect('activate', toggleAccel)
+  menu.append(command_two)
   restarttray = gtk.MenuItem.new_with_label('Restart Tray')
   restarttray.connect('activate', restart)
   exittray = gtk.MenuItem.new_with_label('Exit Tray')
