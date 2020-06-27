@@ -23,6 +23,7 @@ DARK_TH = config.get('themes', {}).get('dark')
 LIGHT_TH = config.get('themes',{}).get('light')
 THRESHOLD = config.get('threshold', 10)
 INVERT = config.get('invert_cmd', 'xrandr-invert-colors')
+BACKLIGHT = config.get('backlight_cmd', ['xbacklight', '='])
 
 # Number of measurements to use to adjust value (ie: sensor is too sensitive)
 NB_MSR = config.get('nb_msr', 1)
@@ -126,8 +127,9 @@ def update_backlight(lvl):
         adjust(lvl)
     )
     # DEBUG print("Yeah! light changed: " + br)
-    subprocess.check_call(["xbacklight", "="+br])
-    if (float(br) < float(THRESHOLD)):
+    # subprocess.check_call(["xbacklight", "="+br])
+    subprocess.check_call(BACKLIGHT+[br])
+    if (float(lvl) < float(THRESHOLD)):
         call_theme_cmd(DARK_TH)
         call_invert(True)
     else:
