@@ -76,12 +76,21 @@ else:
 def change_orientation(orientation):
     pos = ORIENTATIONS.get(orientation)
     if (pos is not None) and (SCREEN is not None):
-        subprocess.check_call(['xrandr', '--output', SCREEN, '--rotate', pos['dir']])
+        # subprocess.check_call(['xrandr', '--output', SCREEN, '--rotate', pos['dir']])
+        subprocess.check_call(['swaymsg', 'output', SCREEN, 'transform',
+            {
+                'normal': '0',
+                'right-up': '90',
+                'bottom-up': '180',
+                'left-up': '270'
+                }[orientation]
+            ])
         for dev in DEVS:
             try:
                 subprocess.check_call(
                         [
-                            'xinput', 'map-to-output', dev, SCREEN
+                            # 'xinput', 'map-to-output', dev, SCREEN
+                            'swaymsg', 'input', dev, 'map_to_output', SCREEN
                         ]
                 )
             except:
